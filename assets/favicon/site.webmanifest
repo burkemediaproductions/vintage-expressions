@@ -1,0 +1,19 @@
+{
+  "name": "Vintage Expressions",
+  "short_name": "Vintage Expressions",
+  "theme_color": "#2f8c84",
+  "background_color": "#2e2117",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "/assets/favicon/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/assets/favicon/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
