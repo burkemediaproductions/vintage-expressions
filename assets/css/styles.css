@@ -96,18 +96,21 @@ input:focus-visible {
 
 .hero-bg-video {
   object-fit: cover;
-  z-index: -3;
-  background: var(--color-teal-dark) url('/assets/img/video-poster-ocean-sunset.jpg') center / cover no-repeat;
+  z-index: 0;
+  background: var(--color-teal-dark) url('/assets/video/oceanbg.png') center / cover no-repeat;
 }
 
 .hero-overlay {
-  z-index: -2;
+  z-index: 1;
+  pointer-events: none;
   background:
     radial-gradient(circle at 50% 45%, rgba(245,235,215,.22), transparent 30rem),
     linear-gradient(180deg, rgba(46,33,23,.28), rgba(46,33,23,.75));
 }
 
 .hero-content {
+  position: relative;
+  z-index: 2;
   width: min(850px, 100%);
   margin-inline: auto;
   text-align: center;
@@ -122,6 +125,10 @@ input:focus-visible {
   margin: 0 auto clamp(1rem, 3vw, 2rem);
   background: transparent;
   filter: drop-shadow(0 1.25rem 2rem rgba(0,0,0,.28));
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
 }
 
 .eyebrow {
