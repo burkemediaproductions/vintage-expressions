@@ -88,11 +88,48 @@ async function listCatalogObjects(types = 'ITEM,CATEGORY,IMAGE') {
   return objects;
 }
 
+function isPresentAtLocation(object, locationId) {
+  if (!locationId) return true;
+
+  if (Array.isArray(object.absent_at_location_ids) && object.absent_at_location_ids.includes(locationId)) {
+    return false;
+  }
+
+  if (object.present_at_all_locations === true) {
+    return true;
+  }
+
+  if (Array.isArray(object.present_at_location_ids) && object.present_at_location_ids.includes(locationId)) {
+    return true;
+  }
+
+  if (object.present_at_all_locations === undefined && !object.present_at_location_ids && !object.absent_at_location_ids) {
+    return true;
+  }
+
+  return false;
+}
+
+function getCategoryIds(item) {
+  const ids = [];
+
+  if (Array.isArray(item.categories)) {
+    item.categories.forEach((category) => {
+      if (category?.id) ids.push(category.id);
+    });
+  }
+
+  if (item.category_id) ids.push(item.category_id);
+
+  return [...new Set(ids)];
+}
+
 function normalizeCatalog(objects) {
   if (!objects.length) {
     return { categories: fallbackCategories, products: [] };
   }
 
+  const locationId = process.env.SQUARE_LOCATION_ID || '';
   const categories = [];
   const categoriesById = new Map();
   const imagesById = new Map();
@@ -121,15 +158,15 @@ function normalizeCatalog(objects) {
 
   const products = objects
     .filter((object) => object.type === 'ITEM' && !object.is_deleted && object.item_data)
+    .filter((object) => isPresentAtLocation(object, locationId))
     .map((object) => {
       const item = object.item_data || {};
-      const categoryIds = [
-        ...(Array.isArray(item.categories) ? item.categories.map((category) => category.id).filter(Boolean) : []),
-        item.category_id
-      ].filter(Boolean);
-
-      const firstCategory = categoryIds.map((id) => categoriesById.get(id)).find(Boolean) || null;
-      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => !variation.is_deleted) : [];
+      const categoryIds = getCategoryIds(item);
+      const categoryObjects = categoryIds.map((id) => categoriesById.get(id)).filter(Boolean);
+      const firstCategory = categoryObjects[0] || null;
+      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => {
+        return !variation.is_deleted && isPresentAtLocation(variation, locationId);
+      }) : [];
       const firstVariation = variations[0] || null;
       const variationData = firstVariation?.item_variation_data || {};
       const priceMoney = variationData.price_money || null;
@@ -141,17 +178,25 @@ function normalizeCatalog(objects) {
         variationName: variationData.name || '',
         name: item.name || 'Vintage Find',
         description: item.description || '',
-        price: priceMoney?.amount ? priceMoney.amount / 100 : null,
-        priceAmountCents: priceMoney?.amount || null,
+        price: typeof priceMoney?.amount === 'number' ? priceMoney.amount / 100 : null,
+        priceAmountCents: typeof priceMoney?.amount === 'number' ? priceMoney.amount : null,
         currency: priceMoney?.currency || 'USD',
         categoryId: firstCategory?.id || '',
         category: firstCategory?.name || 'Vintage Find',
         categorySlug: firstCategory?.slug || '',
+        categoryIds,
+        categorySlugs: categoryObjects.map((category) => category.slug),
+        categories: categoryObjects.map((category) => category.name),
         image: imageId ? imagesById.get(imageId) || '/assets/img/shop/product-placeholder.jpg' : '/assets/img/shop/product-placeholder.jpg',
+        checkoutReady: Boolean(firstVariation?.id && typeof priceMoney?.amount === 'number'),
+        missingCheckoutReason: !firstVariation?.id
+          ? 'Missing item variation'
+          : typeof priceMoney?.amount !== 'number'
+            ? 'Missing variation price'
+            : '',
         updatedAt: object.updated_at || ''
       };
-    })
-    .filter((product) => product.variationId && typeof product.priceAmountCents === 'number');
+    });
 
   return { categories, products };
 }
@@ -174,6 +219,8 @@ function productCard(product) {
   const safeVariationId = escapeHtml(product.variationId || '');
   const safeCurrency = escapeHtml(product.currency || 'USD');
   const safePriceCents = Number.isFinite(Number(product.priceAmountCents)) ? Number(product.priceAmountCents) : '';
+  const checkoutReady = Boolean(product.checkoutReady || (safeVariationId && safePriceCents !== ''));
+  const safeMissingCheckoutReason = escapeHtml(product.missingCheckoutReason || '');
 
   return `        <article class="product-card reveal">
           <img src="${safeImage}" alt="${safeName}" loading="lazy" width="600" height="600">
@@ -181,9 +228,10 @@ function productCard(product) {
             <p class="eyebrow dark">${safeCategory}</p>
             <h3>${safeName}</h3>
             ${safeDescription ? `<p>${safeDescription}</p>` : ''}
-            ${price ? `<div class="product-price">${price}</div>` : ''}
+            ${price ? `<div class="product-price">${price}</div>` : `<div class="product-price product-price-pending">Price coming soon</div>`}
             <div class="product-actions">
-              ${safeVariationId ? `<button class="btn btn-primary add-to-cart" type="button" data-variation-id="${safeVariationId}" data-name="${safeName}" data-price-cents="${safePriceCents}" data-currency="${safeCurrency}" data-image="${safeImage}">Add to Cart</button>` : `<a class="btn btn-primary" href="/contact/">Ask About This Item</a>`}
+              ${checkoutReady ? `<button class="btn btn-primary add-to-cart" type="button" data-variation-id="${safeVariationId}" data-name="${safeName}" data-price-cents="${safePriceCents}" data-currency="${safeCurrency}" data-image="${safeImage}">Add to Cart</button>` : `<a class="btn btn-primary" href="/contact/">Ask About This Item</a>`}
+              ${safeMissingCheckoutReason ? `<p class="product-note">${safeMissingCheckoutReason}</p>` : ''}
             </div>
           </div>
         </article>`;
@@ -283,7 +331,7 @@ async function generateCategoryPages(categories, products) {
     category.slug = slugify(category.name);
 
     const copy = categoryCopy(category, overrides);
-    const categoryProducts = products.filter((product) => product.categoryId === category.id || product.categorySlug === category.slug);
+    const categoryProducts = products.filter((product) => product.categoryId === category.id || product.categorySlug === category.slug || (Array.isArray(product.categoryIds) && product.categoryIds.includes(category.id)) || (Array.isArray(product.categorySlugs) && product.categorySlugs.includes(category.slug)));
 
     const productCards = categoryProducts.length
       ? categoryProducts.map(productCard).join('\n')
@@ -381,6 +429,32 @@ ${productCards}
 }
 
 
+async function writeCatalogDebug(categories, products) {
+  const debug = {
+    generatedAt: new Date().toISOString(),
+    environment: process.env.SQUARE_ENVIRONMENT || 'production',
+    locationIdConfigured: Boolean(process.env.SQUARE_LOCATION_ID),
+    categoryCount: categories.length,
+    productCount: products.length,
+    checkoutReadyProductCount: products.filter((product) => product.checkoutReady).length,
+    categories: categories.map((category) => ({ id: category.id, name: category.name, slug: category.slug })),
+    products: products.map((product) => ({
+      id: product.id,
+      variationId: product.variationId,
+      name: product.name,
+      categories: product.categories,
+      categoryIds: product.categoryIds,
+      categorySlugs: product.categorySlugs,
+      priceAmountCents: product.priceAmountCents,
+      checkoutReady: product.checkoutReady,
+      missingCheckoutReason: product.missingCheckoutReason
+    }))
+  };
+
+  await fs.writeFile(path.join(ROOT, 'data/square-catalog-debug.json'), JSON.stringify(debug, null, 2));
+}
+
+
 async function generateSitemap() {
   const files = await walkHtmlFiles();
   const urls = files
@@ -405,12 +479,13 @@ async function main() {
   const objects = await listCatalogObjects();
   const { categories, products } = normalizeCatalog(objects);
 
+  await writeCatalogDebug(categories, products);
   await generateCategoryPages(categories, products);
   await generateShopPage(categories, products);
   await updateAllNavigation(categories);
   await generateSitemap();
 
-  console.log(`Square build complete. Generated ${categories.length} category page(s).`);
+  console.log(`Square build complete. Categories: ${categories.length}. Products: ${products.length}. Checkout-ready products: ${products.filter((product) => product.checkoutReady).length}.`);
 }
 
 main().catch((error) => {

@@ -23,7 +23,9 @@ export function createProductCard(product) {
   const image = escapeHtml(product.image || '/assets/img/shop/product-placeholder.jpg');
   const price = formatPrice(product);
   const variationId = escapeHtml(product.variationId || '');
+  const checkoutReady = Boolean(product.checkoutReady || (variationId && typeof product.priceAmountCents === 'number'));
   const priceAmountCents = Number.isFinite(Number(product.priceAmountCents)) ? Number(product.priceAmountCents) : '';
+  const missingCheckoutReason = escapeHtml(product.missingCheckoutReason || '');
 
   return `
     <article class="product-card reveal" data-product-category="${category}">
@@ -41,11 +43,11 @@ export function createProductCard(product) {
 
         ${description ? `<p>${description}</p>` : ''}
 
-        ${price ? `<div class="product-price">${price}</div>` : ''}
+        ${price ? `<div class="product-price">${price}</div>` : '<div class="product-price product-price-pending">Price coming soon</div>'}
 
         <div class="product-actions">
           ${
-            variationId
+            checkoutReady
               ? `<button
                   class="btn btn-primary add-to-cart"
                   type="button"
@@ -57,6 +59,7 @@ export function createProductCard(product) {
                 >Add to Cart</button>`
               : `<a href="/contact/" class="btn btn-primary">Ask About This Item</a>`
           }
+          ${missingCheckoutReason ? `<p class="product-note">${missingCheckoutReason}</p>` : ''}
         </div>
       </div>
     </article>

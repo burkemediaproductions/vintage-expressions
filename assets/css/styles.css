@@ -361,3 +361,14 @@
 .product-actions .btn {
   margin-left: 0;
 }
+
+.product-note {
+  margin: .55rem 0 0;
+  color: var(--color-brown-soft);
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.product-price-pending {
+  color: var(--color-brown-soft);
+}

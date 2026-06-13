@@ -8,6 +8,28 @@ function normalize(value = '') {
   return String(value).trim().toLowerCase();
 }
 
+function productMatchesCategory(product, requestedCategory) {
+  if (!requestedCategory) return true;
+
+  const requested = normalize(requestedCategory);
+  const names = [
+    product.category,
+    ...(Array.isArray(product.categories) ? product.categories : [])
+  ].map(normalize);
+
+  const slugs = [
+    product.categorySlug,
+    ...(Array.isArray(product.categorySlugs) ? product.categorySlugs : [])
+  ].map(normalize);
+
+  const ids = [
+    product.categoryId,
+    ...(Array.isArray(product.categoryIds) ? product.categoryIds : [])
+  ].map(normalize);
+
+  return names.includes(requested) || slugs.includes(requested) || ids.includes(requested);
+}
+
 async function loadProducts() {
   const containers = document.querySelectorAll('[data-square-products]');
 
@@ -26,9 +48,7 @@ async function loadProducts() {
     containers.forEach((container) => {
       const requestedCategory = getRequestedCategory(container);
 
-      const filteredProducts = requestedCategory
-        ? products.filter((product) => normalize(product.category) === normalize(requestedCategory))
-        : products;
+      const filteredProducts = products.filter((product) => productMatchesCategory(product, requestedCategory));
 
       if (!filteredProducts.length) {
         container.innerHTML = `

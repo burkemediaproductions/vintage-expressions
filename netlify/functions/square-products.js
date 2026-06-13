@@ -57,7 +57,45 @@ async function listCatalogObjects(types = 'ITEM,CATEGORY,IMAGE') {
   return objects;
 }
 
+function isPresentAtLocation(object, locationId) {
+  if (!locationId) return true;
+
+  if (Array.isArray(object.absent_at_location_ids) && object.absent_at_location_ids.includes(locationId)) {
+    return false;
+  }
+
+  if (object.present_at_all_locations === true) {
+    return true;
+  }
+
+  if (Array.isArray(object.present_at_location_ids) && object.present_at_location_ids.includes(locationId)) {
+    return true;
+  }
+
+  // If location fields are absent/undefined, do not hide the item. Catalog reads are not channel-gated.
+  if (object.present_at_all_locations === undefined && !object.present_at_location_ids && !object.absent_at_location_ids) {
+    return true;
+  }
+
+  return false;
+}
+
+function getCategoryIds(item) {
+  const ids = [];
+
+  if (Array.isArray(item.categories)) {
+    item.categories.forEach((category) => {
+      if (category?.id) ids.push(category.id);
+    });
+  }
+
+  if (item.category_id) ids.push(item.category_id);
+
+  return [...new Set(ids)];
+}
+
 function normalizeCatalog(objects) {
+  const locationId = process.env.SQUARE_LOCATION_ID || '';
   const categories = [];
   const categoriesById = new Map();
   const imagesById = new Map();
@@ -86,15 +124,15 @@ function normalizeCatalog(objects) {
 
   const products = objects
     .filter((object) => object.type === 'ITEM' && !object.is_deleted && object.item_data)
+    .filter((object) => isPresentAtLocation(object, locationId))
     .map((object) => {
       const item = object.item_data || {};
-      const categoryIds = [
-        ...(Array.isArray(item.categories) ? item.categories.map((category) => category.id).filter(Boolean) : []),
-        item.category_id
-      ].filter(Boolean);
-
-      const firstCategory = categoryIds.map((id) => categoriesById.get(id)).find(Boolean) || null;
-      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => !variation.is_deleted) : [];
+      const categoryIds = getCategoryIds(item);
+      const categoryObjects = categoryIds.map((id) => categoriesById.get(id)).filter(Boolean);
+      const firstCategory = categoryObjects[0] || null;
+      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => {
+        return !variation.is_deleted && isPresentAtLocation(variation, locationId);
+      }) : [];
       const firstVariation = variations[0] || null;
       const variationData = firstVariation?.item_variation_data || {};
       const priceMoney = variationData.price_money || null;
@@ -106,17 +144,25 @@ function normalizeCatalog(objects) {
         variationName: variationData.name || '',
         name: item.name || 'Vintage Find',
         description: item.description || '',
-        price: priceMoney?.amount ? priceMoney.amount / 100 : null,
-        priceAmountCents: priceMoney?.amount || null,
+        price: typeof priceMoney?.amount === 'number' ? priceMoney.amount / 100 : null,
+        priceAmountCents: typeof priceMoney?.amount === 'number' ? priceMoney.amount : null,
         currency: priceMoney?.currency || 'USD',
         category: firstCategory?.name || 'Vintage Find',
         categoryId: firstCategory?.id || '',
         categorySlug: firstCategory?.slug || '',
+        categoryIds,
+        categorySlugs: categoryObjects.map((category) => category.slug),
+        categories: categoryObjects.map((category) => category.name),
         image: imageId ? imagesById.get(imageId) || '/assets/img/shop/product-placeholder.jpg' : '/assets/img/shop/product-placeholder.jpg',
+        checkoutReady: Boolean(firstVariation?.id && typeof priceMoney?.amount === 'number'),
+        missingCheckoutReason: !firstVariation?.id
+          ? 'Missing item variation'
+          : typeof priceMoney?.amount !== 'number'
+            ? 'Missing variation price'
+            : '',
         updatedAt: object.updated_at || ''
       };
-    })
-    .filter((product) => product.variationId && typeof product.priceAmountCents === 'number');
+    });
 
   return { categories, products };
 }

@@ -39,3 +39,28 @@ SQUARE_APPLICATION_ID=production application id
 ```
 
 No frontend code should need to change.
+
+## Square item/category troubleshooting
+
+This version intentionally displays Square catalog items even when they are not yet checkout-ready. If an item is missing a variation or price, it appears with an `Ask About This Item` button instead of `Add to Cart`.
+
+Debug helpers:
+
+```txt
+/.netlify/functions/square-debug
+/data/square-catalog-debug.json
+```
+
+Use these to confirm what the API is actually returning from Sandbox or Production.
+
+Items do not need to be assigned to a Square Online channel for the Catalog API to return them. The important fields for this site are:
+
+```txt
+Item exists in the same Square environment as SQUARE_ENVIRONMENT
+Item is assigned to a Square category
+Item has at least one item variation
+Item variation has a price if it should be checkout-ready
+Item/location visibility is compatible with SQUARE_LOCATION_ID
+```
+
+Checkout requires a Square CatalogItemVariation ID and price.
