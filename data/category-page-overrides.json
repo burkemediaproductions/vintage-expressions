@@ -1,0 +1,30 @@
+{
+  "furniture": {
+    "title": "Vintage Furniture in Pacific Beach | Vintage Expressions",
+    "metaDescription": "Explore vintage furniture, statement chairs, tables, storage, and one-of-a-kind home finds at Vintage Expressions in Pacific Beach, San Diego.",
+    "intro": "Explore curated vintage furniture, statement pieces, and one-of-a-kind home finds available through Vintage Expressions in Pacific Beach, San Diego.",
+    "eyebrow": "Statement Pieces + Everyday Character",
+    "heroImage": "/assets/img/hero/furniture-hero.jpg"
+  },
+  "clothing": {
+    "title": "Vintage Clothing in Pacific Beach | Vintage Expressions",
+    "metaDescription": "Browse curated vintage clothing, accessories, and expressive style finds at Vintage Expressions in Pacific Beach, San Diego.",
+    "intro": "Browse curated vintage clothing, accessories, and expressive style finds selected for personality, texture, and coastal San Diego charm.",
+    "eyebrow": "Wearable Vintage Style",
+    "heroImage": "/assets/img/hero/clothing-hero.jpg"
+  },
+  "art-decor": {
+    "title": "Vintage Art & Decor in Pacific Beach | Vintage Expressions",
+    "metaDescription": "Discover vintage art, decorative treasures, wall pieces, and home accents at Vintage Expressions in Pacific Beach, San Diego.",
+    "intro": "Discover vintage art, decorative treasures, wall pieces, and accents that bring warmth, color, and collected character into a space.",
+    "eyebrow": "Decorative Treasures",
+    "heroImage": "/assets/img/hero/art-decor-hero.jpg"
+  },
+  "creative-reuse": {
+    "title": "Creative Reuse Finds in Pacific Beach | Vintage Expressions",
+    "metaDescription": "Shop creative reuse pieces, repurposed finds, and sustainable vintage inspiration at Vintage Expressions in Pacific Beach, San Diego.",
+    "intro": "Shop creative reuse pieces, repurposed finds, and sustainable vintage inspiration for seeing beautiful possibilities in what already exists.",
+    "eyebrow": "Reuse, Recycle, Reimagine",
+    "heroImage": "/assets/img/hero/creative-reuse-hero.jpg"
+  }
+}

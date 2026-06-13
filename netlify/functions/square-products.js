@@ -1,45 +1,122 @@
-const { Client, Environment } = require('square');
+const SQUARE_VERSION = process.env.SQUARE_VERSION || '2026-05-20';
 
-exports.handler = async function () {
-  try {
-    if (!process.env.SQUARE_ACCESS_TOKEN || !process.env.SQUARE_LOCATION_ID) {
-      return {
-        statusCode: 500,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          error: 'Missing required Square environment variables.'
-        })
+function getSquareBaseUrl() {
+  return process.env.SQUARE_ENVIRONMENT === 'sandbox'
+    ? 'https://connect.squareupsandbox.com'
+    : 'https://connect.squareup.com';
+}
+
+function slugify(value = '') {
+  return String(value)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/&/g, ' and ')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+async function squareFetch(path) {
+  const token = process.env.SQUARE_ACCESS_TOKEN;
+
+  if (!token) {
+    throw new Error('Missing SQUARE_ACCESS_TOKEN');
+  }
+
+  const response = await fetch(`${getSquareBaseUrl()}${path}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Square-Version': SQUARE_VERSION,
+      'Content-Type': 'application/json'
+    }
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Square API error ${response.status}: ${body}`);
+  }
+
+  return response.json();
+}
+
+async function listCatalogObjects(types = 'ITEM,CATEGORY,IMAGE') {
+  const objects = [];
+  let cursor = '';
+
+  do {
+    const qs = new URLSearchParams({ types });
+    if (cursor) qs.set('cursor', cursor);
+
+    const data = await squareFetch(`/v2/catalog/list?${qs.toString()}`);
+    objects.push(...(data.objects || []));
+    cursor = data.cursor || '';
+  } while (cursor);
+
+  return objects;
+}
+
+function normalizeCatalog(objects) {
+  const categories = [];
+  const categoriesById = new Map();
+  const imagesById = new Map();
+
+  for (const object of objects) {
+    if (object.is_deleted) continue;
+
+    if (object.type === 'CATEGORY') {
+      const name = object.category_data?.name || 'Category';
+      const category = {
+        id: object.id,
+        name,
+        slug: slugify(name),
+        updatedAt: object.updated_at || ''
       };
+      categories.push(category);
+      categoriesById.set(object.id, category);
     }
 
-    const client = new Client({
-      accessToken: process.env.SQUARE_ACCESS_TOKEN,
-      environment: Environment.Production
-    });
+    if (object.type === 'IMAGE') {
+      imagesById.set(object.id, object.image_data?.url || '');
+    }
+  }
 
-    const response = await client.catalogApi.searchCatalogItems({
-      enabledLocationIds: [process.env.SQUARE_LOCATION_ID]
-    });
+  categories.sort((a, b) => a.name.localeCompare(b.name));
 
-    const items = response.result.items || [];
+  const products = objects
+    .filter((object) => object.type === 'ITEM' && !object.is_deleted && object.item_data)
+    .map((object) => {
+      const item = object.item_data || {};
+      const categoryIds = [
+        ...(Array.isArray(item.categories) ? item.categories.map((category) => category.id).filter(Boolean) : []),
+        item.category_id
+      ].filter(Boolean);
 
-    const products = items.map((item) => {
-      const variation = item.itemData?.variations?.[0];
-      const priceMoney = variation?.itemVariationData?.priceMoney;
-      const categoryName = item.itemData?.categories?.[0]?.name || '';
+      const firstCategory = categoryIds.map((id) => categoriesById.get(id)).find(Boolean) || null;
+      const firstVariation = Array.isArray(item.variations) ? item.variations[0] : null;
+      const priceMoney = firstVariation?.item_variation_data?.price_money || null;
+      const imageId = Array.isArray(item.image_ids) ? item.image_ids[0] : null;
 
       return {
-        id: item.id,
-        name: item.itemData?.name || '',
-        description: item.itemData?.description || '',
-        imageId: item.itemData?.imageIds?.[0] || null,
-        image: '/assets/img/shop/product-placeholder.jpg',
-        price: priceMoney?.amount ? Number(priceMoney.amount) / 100 : null,
+        id: object.id,
+        name: item.name || 'Vintage Find',
+        description: item.description || '',
+        price: priceMoney?.amount ? priceMoney.amount / 100 : null,
         currency: priceMoney?.currency || 'USD',
-        category: categoryName,
-        available: true
+        category: firstCategory?.name || 'Vintage Find',
+        categoryId: firstCategory?.id || '',
+        categorySlug: firstCategory?.slug || '',
+        image: imageId ? imagesById.get(imageId) || '' : '',
+        updatedAt: object.updated_at || ''
       };
     });
+
+  return { categories, products };
+}
+
+exports.handler = async function handler() {
+  try {
+    const objects = await listCatalogObjects();
+    const data = normalizeCatalog(objects);
 
     return {
       statusCode: 200,
@@ -47,17 +124,15 @@ exports.handler = async function () {
         'Content-Type': 'application/json',
         'Cache-Control': 'public, max-age=300'
       },
-      body: JSON.stringify({ products })
+      body: JSON.stringify(data)
     };
   } catch (error) {
-    console.error('Square inventory error:', error);
+    console.error(error);
 
     return {
       statusCode: 500,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        error: 'Unable to retrieve Square inventory'
-      })
+      body: JSON.stringify({ error: 'Unable to load Square catalog data.' })
     };
   }
 };
