@@ -22,6 +22,8 @@ export function createProductCard(product) {
   const category = escapeHtml(product.category || 'Vintage Find');
   const image = escapeHtml(product.image || '/assets/img/shop/product-placeholder.jpg');
   const price = formatPrice(product);
+  const variationId = escapeHtml(product.variationId || '');
+  const priceAmountCents = Number.isFinite(Number(product.priceAmountCents)) ? Number(product.priceAmountCents) : '';
 
   return `
     <article class="product-card reveal" data-product-category="${category}">
@@ -42,9 +44,19 @@ export function createProductCard(product) {
         ${price ? `<div class="product-price">${price}</div>` : ''}
 
         <div class="product-actions">
-          <a href="/contact/" class="btn btn-primary">
-            Ask About This Item
-          </a>
+          ${
+            variationId
+              ? `<button
+                  class="btn btn-primary add-to-cart"
+                  type="button"
+                  data-variation-id="${variationId}"
+                  data-name="${name}"
+                  data-price-cents="${priceAmountCents}"
+                  data-currency="${escapeHtml(product.currency || 'USD')}"
+                  data-image="${image}"
+                >Add to Cart</button>`
+              : `<a href="/contact/" class="btn btn-primary">Ask About This Item</a>`
+          }
         </div>
       </div>
     </article>

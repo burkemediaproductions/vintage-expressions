@@ -16,7 +16,7 @@ function slugify(value = '') {
     .replace(/^-+|-+$/g, '');
 }
 
-async function squareFetch(path) {
+async function squareFetch(path, options = {}) {
   const token = process.env.SQUARE_ACCESS_TOKEN;
 
   if (!token) {
@@ -24,10 +24,12 @@ async function squareFetch(path) {
   }
 
   const response = await fetch(`${getSquareBaseUrl()}${path}`, {
+    ...options,
     headers: {
       Authorization: `Bearer ${token}`,
       'Square-Version': SQUARE_VERSION,
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
+      ...(options.headers || {})
     }
   });
 
@@ -92,23 +94,29 @@ function normalizeCatalog(objects) {
       ].filter(Boolean);
 
       const firstCategory = categoryIds.map((id) => categoriesById.get(id)).find(Boolean) || null;
-      const firstVariation = Array.isArray(item.variations) ? item.variations[0] : null;
-      const priceMoney = firstVariation?.item_variation_data?.price_money || null;
+      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => !variation.is_deleted) : [];
+      const firstVariation = variations[0] || null;
+      const variationData = firstVariation?.item_variation_data || {};
+      const priceMoney = variationData.price_money || null;
       const imageId = Array.isArray(item.image_ids) ? item.image_ids[0] : null;
 
       return {
         id: object.id,
+        variationId: firstVariation?.id || '',
+        variationName: variationData.name || '',
         name: item.name || 'Vintage Find',
         description: item.description || '',
         price: priceMoney?.amount ? priceMoney.amount / 100 : null,
+        priceAmountCents: priceMoney?.amount || null,
         currency: priceMoney?.currency || 'USD',
         category: firstCategory?.name || 'Vintage Find',
         categoryId: firstCategory?.id || '',
         categorySlug: firstCategory?.slug || '',
-        image: imageId ? imagesById.get(imageId) || '' : '',
+        image: imageId ? imagesById.get(imageId) || '/assets/img/shop/product-placeholder.jpg' : '/assets/img/shop/product-placeholder.jpg',
         updatedAt: object.updated_at || ''
       };
-    });
+    })
+    .filter((product) => product.variationId && typeof product.priceAmountCents === 'number');
 
   return { categories, products };
 }

@@ -129,15 +129,20 @@ function normalizeCatalog(objects) {
       ].filter(Boolean);
 
       const firstCategory = categoryIds.map((id) => categoriesById.get(id)).find(Boolean) || null;
-      const firstVariation = Array.isArray(item.variations) ? item.variations[0] : null;
-      const priceMoney = firstVariation?.item_variation_data?.price_money || null;
+      const variations = Array.isArray(item.variations) ? item.variations.filter((variation) => !variation.is_deleted) : [];
+      const firstVariation = variations[0] || null;
+      const variationData = firstVariation?.item_variation_data || {};
+      const priceMoney = variationData.price_money || null;
       const imageId = Array.isArray(item.image_ids) ? item.image_ids[0] : null;
 
       return {
         id: object.id,
+        variationId: firstVariation?.id || '',
+        variationName: variationData.name || '',
         name: item.name || 'Vintage Find',
         description: item.description || '',
         price: priceMoney?.amount ? priceMoney.amount / 100 : null,
+        priceAmountCents: priceMoney?.amount || null,
         currency: priceMoney?.currency || 'USD',
         categoryId: firstCategory?.id || '',
         category: firstCategory?.name || 'Vintage Find',
@@ -145,7 +150,8 @@ function normalizeCatalog(objects) {
         image: imageId ? imagesById.get(imageId) || '/assets/img/shop/product-placeholder.jpg' : '/assets/img/shop/product-placeholder.jpg',
         updatedAt: object.updated_at || ''
       };
-    });
+    })
+    .filter((product) => product.variationId && typeof product.priceAmountCents === 'number');
 
   return { categories, products };
 }
@@ -161,15 +167,24 @@ function formatPrice(product) {
 
 function productCard(product) {
   const price = formatPrice(product);
+  const safeName = escapeHtml(product.name);
+  const safeImage = escapeHtml(product.image);
+  const safeCategory = escapeHtml(product.category);
+  const safeDescription = escapeHtml(product.description || '');
+  const safeVariationId = escapeHtml(product.variationId || '');
+  const safeCurrency = escapeHtml(product.currency || 'USD');
+  const safePriceCents = Number.isFinite(Number(product.priceAmountCents)) ? Number(product.priceAmountCents) : '';
 
   return `        <article class="product-card reveal">
-          <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" width="600" height="600">
+          <img src="${safeImage}" alt="${safeName}" loading="lazy" width="600" height="600">
           <div class="product-card-content">
-            <p class="eyebrow dark">${escapeHtml(product.category)}</p>
-            <h3>${escapeHtml(product.name)}</h3>
-            ${product.description ? `<p>${escapeHtml(product.description)}</p>` : ''}
-            ${price ? `<div class="product-price">${escapeHtml(price)}</div>` : ''}
-            <div class="product-actions"><a class="btn btn-primary" href="/contact/">Ask About This Item</a></div>
+            <p class="eyebrow dark">${safeCategory}</p>
+            <h3>${safeName}</h3>
+            ${safeDescription ? `<p>${safeDescription}</p>` : ''}
+            ${price ? `<div class="product-price">${price}</div>` : ''}
+            <div class="product-actions">
+              ${safeVariationId ? `<button class="btn btn-primary add-to-cart" type="button" data-variation-id="${safeVariationId}" data-name="${safeName}" data-price-cents="${safePriceCents}" data-currency="${safeCurrency}" data-image="${safeImage}">Add to Cart</button>` : `<a class="btn btn-primary" href="/contact/">Ask About This Item</a>`}
+            </div>
           </div>
         </article>`;
 }
@@ -330,6 +345,42 @@ async function generateCategoryPages(categories, products) {
   await removeStaleGeneratedPages(activeSlugs);
 }
 
+async function generateShopPage(categories, products) {
+  const shopPath = path.join(ROOT, 'shop', 'index.html');
+
+  try {
+    let html = await fs.readFile(shopPath, 'utf8');
+    const productCards = products.length
+      ? products.map(productCard).join('\n')
+      : `        <div class="inventory-empty"><p>New treasures are arriving soon.</p></div>`;
+
+    const inventorySection = `<section class="section-cream square-inventory-section" aria-labelledby="square-shop-title" data-square-shop-section>
+  <div class="container">
+    <div class="section-heading reveal">
+      <p class="eyebrow dark">Current Inventory</p>
+      <h2 id="square-shop-title">Shop Available Finds</h2>
+      <p>These items are pulled from the Square catalog during the site build. Add favorites to your cart and check out securely through Square.</p>
+    </div>
+    <div class="product-grid square-product-grid">
+${productCards}
+    </div>
+  </div>
+</section>
+<div class="wave-divider wave-to-teal" aria-hidden="true"><svg viewBox="0 0 1440 120" preserveAspectRatio="none" focusable="false"><path d="M0,64 C180,120 360,0 540,56 C720,112 900,12 1080,58 C1260,104 1350,86 1440,42 L1440,120 L0,120 Z"></path></svg></div>`;
+
+    if (html.includes('data-square-shop-section')) {
+      html = html.replace(/<section class="section-cream square-inventory-section"[\s\S]*?<div class="wave-divider wave-to-teal" aria-hidden="true"><svg viewBox="0 0 1440 120" preserveAspectRatio="none" focusable="false"><path d="M0,64 C180,120 360,0 540,56 C720,112 900,12 1080,58 C1260,104 1350,86 1440,42 L1440,120 L0,120 Z"><\/path><\/svg><\/div>/, inventorySection);
+    } else {
+      html = html.replace('<section class="section-teal"><div class="container"><div class="section-heading light reveal"><p class="eyebrow light">Featured Finds</p>', `${inventorySection}<section class="section-teal"><div class="container"><div class="section-heading light reveal"><p class="eyebrow light">Featured Finds</p>`);
+    }
+
+    await fs.writeFile(shopPath, replaceNavigation(html, categories));
+  } catch (error) {
+    console.warn('Could not update shop page:', error.message);
+  }
+}
+
+
 async function generateSitemap() {
   const files = await walkHtmlFiles();
   const urls = files
@@ -355,6 +406,7 @@ async function main() {
   const { categories, products } = normalizeCatalog(objects);
 
   await generateCategoryPages(categories, products);
+  await generateShopPage(categories, products);
   await updateAllNavigation(categories);
   await generateSitemap();
 
