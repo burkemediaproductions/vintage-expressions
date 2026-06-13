@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Secure Checkout | Vintage Expressions</title>
+  <meta name="description" content="Complete your Vintage Expressions order through our secure branded checkout powered by Square.">
+  <meta name="robots" content="noindex,follow">
+  <meta name="theme-color" content="#2f8c84">
+  <link rel="canonical" href="https://www.vintageexpressions.com/checkout/">
+  <link rel="icon" href="/assets/favicon/favicon.ico" sizes="any">
+  <link rel="icon" type="image/svg+xml" href="/assets/favicon/favicon.svg">
+  <link rel="apple-touch-icon" href="/assets/favicon/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://sandbox.web.squarecdn.com">
+  <link rel="preconnect" href="https://web.squarecdn.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header" aria-label="Site header">
+    <a class="site-brand" href="/" aria-label="Vintage Expressions home"><img src="/assets/logo/logo.png" alt="Vintage Expressions" width="180" height="90"></a>
+    <nav class="desktop-nav" aria-label="Main navigation"><a class="nav-link" href="/">Home</a><a class="nav-link" href="/about/">About</a><a class="nav-link" href="/shop/">Shop</a><div class="nav-dropdown"><button class="nav-link dropdown-toggle" type="button" aria-expanded="false">Categories</button><div class="dropdown-menu"><a href="/furniture/">Furniture</a><a href="/clothing/">Clothing</a><a href="/art-decor/">Art & Decor</a><a href="/creative-reuse/">Creative Reuse</a></div></div><a class="nav-link" href="/events/">Events</a><a class="nav-link" href="/gallery/">Gallery</a><a class="nav-link" href="/blog/">Blog</a><a class="nav-link" href="/contact/">Contact</a></nav>
+    <button class="menu-toggle" type="button" aria-label="Open menu" aria-controls="mobile-menu" aria-expanded="false"><span></span><span></span><span></span></button>
+  </header>
+
+<main id="main">
+  <section class="page-hero checkout-hero">
+    <div class="container">
+      <p class="eyebrow">Secure Checkout</p>
+      <h1>Complete Your Vintage Find</h1>
+      <p>Review your cart, add your contact details, and pay securely with Square without leaving the Vintage Expressions site.</p>
+    </div>
+  </section>
+
+  <section class="section-cream checkout-section">
+    <div class="container checkout-layout">
+      <div class="checkout-main" data-checkout-form-wrap>
+        <div class="section-heading left">
+          <p class="eyebrow dark">Powered by Square</p>
+          <h2>Payment Details</h2>
+          <p>Your card details are entered through Square’s secure payment form. Vintage Expressions never stores your card number.</p>
+        </div>
+
+        <form class="checkout-form" data-checkout-form>
+          <fieldset>
+            <legend>Contact Information</legend>
+            <div class="form-grid two">
+              <label>
+                <span>First Name</span>
+                <input name="firstName" type="text" autocomplete="given-name" required>
+              </label>
+              <label>
+                <span>Last Name</span>
+                <input name="lastName" type="text" autocomplete="family-name" required>
+              </label>
+            </div>
+
+            <div class="form-grid two">
+              <label>
+                <span>Email</span>
+                <input name="email" type="email" autocomplete="email" required>
+              </label>
+              <label>
+                <span>Phone</span>
+                <input name="phone" type="tel" autocomplete="tel">
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Fulfillment</legend>
+            <div class="checkout-radio-group">
+              <label class="checkout-radio-card">
+                <input type="radio" name="pickupMethod" value="In-store pickup" checked>
+                <span>
+                  <strong>In-store pickup</strong>
+                  <small>Pick up at 1429 Garnet Avenue in Pacific Beach.</small>
+                </span>
+              </label>
+              <label class="checkout-radio-card">
+                <input type="radio" name="pickupMethod" value="Contact me about shipping">
+                <span>
+                  <strong>Ask about shipping</strong>
+                  <small>We will contact you if shipping needs to be arranged.</small>
+                </span>
+              </label>
+            </div>
+
+            <label>
+              <span>Order Notes</span>
+              <textarea name="notes" rows="4" placeholder="Optional notes, timing, or pickup details"></textarea>
+            </label>
+          </fieldset>
+
+          <fieldset>
+            <legend>Card Payment</legend>
+            <div id="card-container" class="square-card-container"></div>
+            <p class="checkout-status" data-checkout-status role="status"></p>
+          </fieldset>
+
+          <button class="btn btn-primary checkout-submit" type="submit" data-place-order>Place Order Securely</button>
+          <p class="checkout-secure-note">Secure payment processing by Square. Sandbox mode accepts Square test cards only.</p>
+        </form>
+      </div>
+
+      <aside class="checkout-summary-card" aria-label="Order summary">
+        <p class="eyebrow dark">Order Summary</p>
+        <h2>Your Cart</h2>
+        <div class="checkout-items" data-checkout-items></div>
+
+        <div class="checkout-empty" data-checkout-empty hidden>
+          <p>Your cart is empty.</p>
+          <a class="btn btn-primary" href="/shop/">Return to Shop</a>
+        </div>
+
+        <div class="checkout-totals">
+          <div>
+            <span>Subtotal</span>
+            <strong data-checkout-subtotal>$0.00</strong>
+          </div>
+          <div>
+            <span>Taxes / shipping</span>
+            <strong>Calculated by Square</strong>
+          </div>
+          <div class="checkout-total">
+            <span>Order Total</span>
+            <strong data-checkout-total>$0.00</strong>
+          </div>
+        </div>
+
+        <p class="checkout-summary-note">Final payment total is created server-side from the Square catalog, not from browser prices.</p>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer"><div class="container footer-grid"><div><strong>Vintage Expressions</strong><p>Reuse, Recycle and Reimagine the Possibilities</p></div><address>1429 Garnet Avenue<br>San Diego, CA 92109</address><div><a href="https://www.google.com/maps/search/?api=1&query=1429%20Garnet%20Avenue%20San%20Diego%20CA%2092109" target="_blank" rel="noopener">Google Maps</a><br><a href="/contact/">Contact</a><br><a href="/privacy/">Privacy</a> · <a href="/terms/">Terms</a></div></div></footer>
+
+<script src="/assets/js/main.js" defer></script>
+<script src="/assets/js/cart.js" defer></script>
+<script src="/assets/js/checkout.js" defer></script>
+</body>
+</html>

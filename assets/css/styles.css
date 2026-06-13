@@ -372,3 +372,244 @@
 .product-price-pending {
   color: var(--color-brown-soft);
 }
+
+/* Branded Square Web Payments checkout */
+.checkout-hero {
+  min-height: 44vh;
+}
+
+.checkout-section {
+  padding-top: clamp(3rem, 6vw, 5rem);
+}
+
+.checkout-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.checkout-main,
+.checkout-summary-card {
+  background: rgba(255, 249, 237, .88);
+  border: 1px solid rgba(46, 33, 23, .16);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+}
+
+.checkout-main {
+  padding: clamp(1.25rem, 4vw, 2.5rem);
+}
+
+.checkout-summary-card {
+  position: sticky;
+  top: calc(var(--header-height) + 1rem);
+  padding: clamp(1.1rem, 3vw, 2rem);
+}
+
+.checkout-form {
+  display: grid;
+  gap: 1.4rem;
+}
+
+.checkout-form fieldset {
+  display: grid;
+  gap: 1rem;
+  margin: 0;
+  padding: 1.2rem;
+  border: 1px solid rgba(46, 33, 23, .16);
+  border-radius: var(--radius-md);
+  background: rgba(245, 235, 215, .6);
+}
+
+.checkout-form legend {
+  padding: 0 .35rem;
+  color: var(--color-brown);
+  font-family: var(--font-condensed);
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.checkout-form label {
+  display: grid;
+  gap: .4rem;
+  color: var(--color-brown);
+  font-weight: 800;
+}
+
+.checkout-form input,
+.checkout-form textarea {
+  width: 100%;
+  border: 1px solid rgba(46, 33, 23, .22);
+  border-radius: .85rem;
+  padding: .85rem 1rem;
+  color: var(--color-brown);
+  background: var(--color-white);
+  font: inherit;
+}
+
+.checkout-radio-group {
+  display: grid;
+  gap: .85rem;
+}
+
+.checkout-radio-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: .75rem;
+  align-items: start;
+  padding: .95rem;
+  border: 1px solid rgba(46, 33, 23, .16);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+  cursor: pointer;
+}
+
+.checkout-radio-card input {
+  width: auto;
+  margin-top: .28rem;
+}
+
+.checkout-radio-card strong,
+.checkout-radio-card small {
+  display: block;
+}
+
+.checkout-radio-card small {
+  color: var(--color-brown-soft);
+  font-weight: 600;
+}
+
+.square-card-container {
+  min-height: 88px;
+  padding: .9rem;
+  border: 1px solid rgba(46, 33, 23, .16);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
+}
+
+.checkout-status {
+  min-height: 1.4rem;
+  margin: 0;
+  font-weight: 800;
+}
+
+.checkout-status[data-status-type="error"] {
+  color: #8f1d1d;
+}
+
+.checkout-status[data-status-type="success"] {
+  color: var(--color-teal-dark);
+}
+
+.checkout-status[data-status-type="info"] {
+  color: var(--color-brown-soft);
+}
+
+.checkout-submit {
+  justify-self: start;
+}
+
+.checkout-secure-note,
+.checkout-summary-note {
+  margin: 0;
+  color: var(--color-brown-soft);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.checkout-items {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+.checkout-line-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: .85rem;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(46, 33, 23, .12);
+}
+
+.checkout-line-item img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: .8rem;
+  background: var(--color-sand);
+}
+
+.checkout-line-item h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.checkout-line-item p {
+  margin: .15rem 0 0;
+  color: var(--color-brown-soft);
+  font-weight: 700;
+}
+
+.checkout-totals {
+  display: grid;
+  gap: .75rem;
+  margin-top: 1rem;
+}
+
+.checkout-totals > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--color-brown-soft);
+  font-weight: 800;
+}
+
+.checkout-totals .checkout-total {
+  padding-top: .8rem;
+  border-top: 2px solid rgba(46, 33, 23, .18);
+  color: var(--color-brown);
+  font-size: 1.1rem;
+}
+
+.checkout-empty {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+
+@media (max-width: 900px) {
+  .checkout-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-summary-card {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 640px) {
+  .form-grid.two,
+  .checkout-line-item {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-line-item img {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}

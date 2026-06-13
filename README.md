@@ -64,3 +64,43 @@ Item/location visibility is compatible with SQUARE_LOCATION_ID
 ```
 
 Checkout requires a Square CatalogItemVariation ID and price.
+
+## Branded on-site Square checkout
+
+This build includes a custom `/checkout/` page using Square Web Payments SDK.
+
+Flow:
+
+```txt
+Cart on Vintage Expressions
+→ /checkout/ branded page
+→ Square secure card element tokenizes card
+→ Netlify function creates a Square order
+→ Netlify function charges payment through Payments API
+→ /thank-you/?checkout=complete
+```
+
+Required Netlify environment variables:
+
+```txt
+SQUARE_ACCESS_TOKEN=your sandbox or production access token
+SQUARE_ENVIRONMENT=sandbox
+SQUARE_APPLICATION_ID=your matching sandbox or production application ID
+SQUARE_LOCATION_ID=your matching sandbox or production location ID
+SQUARE_VERSION=2026-05-20
+SITE_URL=https://www.vintageexpressions.com
+```
+
+Sandbox uses:
+
+```txt
+https://sandbox.web.squarecdn.com/v1/square.js
+```
+
+Production uses:
+
+```txt
+https://web.squarecdn.com/v1/square.js
+```
+
+Important: the card number field is still controlled by Square. The surrounding checkout page is branded by Vintage Expressions, but card data never touches the site code.

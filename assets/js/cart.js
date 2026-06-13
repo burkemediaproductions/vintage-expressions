@@ -143,8 +143,8 @@
               <span>Total</span>
               <strong data-cart-total>$0.00</strong>
             </div>
-            <p class="cart-note">Checkout is powered by Square. Sandbox mode uses Square test payments.</p>
-            <button class="btn btn-primary cart-checkout" type="button" data-cart-checkout>Checkout with Square</button>
+            <p class="cart-note">Checkout happens securely on our site using Square’s payment form.</p>
+            <button class="btn btn-primary cart-checkout" type="button" data-cart-checkout>Checkout</button>
             <button class="cart-clear" type="button" data-cart-clear>Clear cart</button>
             <p class="cart-error" data-cart-error role="alert"></p>
           </div>
@@ -188,36 +188,10 @@
     if (errorEl) errorEl.textContent = '';
     if (checkoutBtn) {
       checkoutBtn.disabled = true;
-      checkoutBtn.textContent = 'Creating Checkout...';
+      checkoutBtn.textContent = 'Opening Checkout...';
     }
 
-    try {
-      const response = await fetch('/.netlify/functions/create-checkout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: cart.map((item) => ({
-            variationId: item.variationId,
-            quantity: item.quantity
-          }))
-        })
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.checkoutUrl) {
-        throw new Error(data.error || 'Unable to create Square checkout.');
-      }
-
-      window.location.href = data.checkoutUrl;
-    } catch (error) {
-      console.error(error);
-      if (errorEl) errorEl.textContent = error.message || 'Unable to create Square checkout.';
-      if (checkoutBtn) {
-        checkoutBtn.disabled = false;
-        checkoutBtn.textContent = 'Checkout with Square';
-      }
-    }
+    window.location.href = '/checkout/';
   }
 
   function wireCartEvents() {
